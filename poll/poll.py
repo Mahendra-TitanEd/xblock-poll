@@ -786,13 +786,14 @@ class PollBlock(PollBase, CSVExportMixin):
         return u"poll-data-export-{}.csv".format(time.strftime("%Y-%m-%d-%H%M%S", time.gmtime(time.time())))
 
     def prepare_data(self):
-        header_row = ['user_id', 'username', 'user_email', 'question', 'answer']
+        header_row = ['course_id', 'user_id', 'username', 'user_email', 'question', 'answer']
         data = {}
         answers_dict = dict(self.answers)
         for sm in self.student_module_queryset():
             choice = json.loads(sm.state)['choice']
             if sm.student.id not in data:
                 data[sm.student.id] = [
+                    getattr(self.runtime, 'course_id', 'course_id'),
                     sm.student.id,
                     sm.student.username,
                     sm.student.email,
@@ -1330,7 +1331,7 @@ class SurveyBlock(PollBase, CSVExportMixin):
         return u"survey-data-export-{}.csv".format(time.strftime("%Y-%m-%d-%H%M%S", time.gmtime(time.time())))
 
     def prepare_data(self):
-        header_row = ['user_id', 'username', 'user_email']
+        header_row = ['course_id', 'user_id', 'username', 'user_email']
         sorted_questions = sorted(self.questions, key=lambda x: x[0])
         questions = [q[1]['label'] for q in sorted_questions]
         data = {}
@@ -1339,6 +1340,7 @@ class SurveyBlock(PollBase, CSVExportMixin):
             state = json.loads(sm.state)
             if sm.student.id not in data and state.get('choices'):
                 row = [
+                    getattr(self.runtime, 'course_id', 'course_id'),
                     sm.student.id,
                     sm.student.username,
                     sm.student.email,
