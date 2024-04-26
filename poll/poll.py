@@ -40,7 +40,7 @@ from web_fragments.fragment import Fragment
 from xblockutils.publish_event import PublishEventMixin
 from xblockutils.resources import ResourceLoader
 from xblockutils.settings import ThemableXBlockMixin, XBlockWithSettingsMixin
-
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from .utils import DummyTranslationService, _, remove_markdown_and_html_tags
 
 try:
@@ -786,14 +786,16 @@ class PollBlock(PollBase, CSVExportMixin):
         return u"poll-data-export-{}.csv".format(time.strftime("%Y-%m-%d-%H%M%S", time.gmtime(time.time())))
 
     def prepare_data(self):
-        header_row = ['course_id', 'user_id', 'username', 'user_email', 'question', 'answer']
+        header_row = ['course_id', 'course_name', 'user_id', 'username', 'user_email', 'question', 'answer']
         data = {}
+        course = CourseOverview.objects.get(id=self.course_id)
         answers_dict = dict(self.answers)
         for sm in self.student_module_queryset():
             choice = json.loads(sm.state)['choice']
             if sm.student.id not in data:
                 data[sm.student.id] = [
-                    getattr(self.runtime, 'course_id', 'course_id'),
+                    self.course_id,
+                    course.display_name,
                     sm.student.id,
                     sm.student.username,
                     sm.student.email,
@@ -1331,16 +1333,18 @@ class SurveyBlock(PollBase, CSVExportMixin):
         return u"survey-data-export-{}.csv".format(time.strftime("%Y-%m-%d-%H%M%S", time.gmtime(time.time())))
 
     def prepare_data(self):
-        header_row = ['course_id', 'user_id', 'username', 'user_email']
+        header_row = ['course_id', 'course_name', 'user_id', 'username', 'user_email']
         sorted_questions = sorted(self.questions, key=lambda x: x[0])
         questions = [q[1]['label'] for q in sorted_questions]
         data = {}
+        course = CourseOverview.objects.get(id=self.course_id)
         answers_dict = dict(self.answers)
         for sm in self.student_module_queryset():
             state = json.loads(sm.state)
             if sm.student.id not in data and state.get('choices'):
                 row = [
-                    getattr(self.runtime, 'course_id', 'course_id'),
+                    self.course_id,
+                    course.display_name,
                     sm.student.id,
                     sm.student.username,
                     sm.student.email,
